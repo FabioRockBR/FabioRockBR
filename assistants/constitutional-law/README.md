@@ -10,6 +10,7 @@ Ferramenta de raciocínio jurídico que reproduz o **método de trabalho dos esc
 | [`docs/01-estudo-e-plano.md`](./docs/01-estudo-e-plano.md) | Estudo de formulação: benchmark de escritórios renomados (full-service, boutiques de contencioso, advocacia de Supremo), jurimetria, e tradução em capacidades de produto. |
 | [`docs/02-modelo-de-dados.md`](./docs/02-modelo-de-dados.md) | Dicionário de dados, diagrama ER e padrões de consulta (RAG híbrido + jurimetria). |
 | [`data/schema.sql`](./data/schema.sql) | DDL PostgreSQL + pgvector: conhecimento, casos, raciocínio, jurimetria e governança. |
+| [`ingestion/n8n/`](./ingestion/n8n/) | Workflows n8n de ingestão (normas e jurisprudência) com embeddings e upsert idempotente. |
 
 ## Princípios (resumo)
 

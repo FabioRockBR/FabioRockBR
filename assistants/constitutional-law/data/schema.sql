@@ -102,7 +102,8 @@ CREATE TABLE legal.norm (
   short_name      text NOT NULL,        -- "CF/1988", "CP", "CPC/2015"
   official_id     text,                 -- "Constituição Federal", "Lei 13.105/2015"
   practice_area   legal.practice_area,
-  created_at      timestamptz NOT NULL DEFAULT now()
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (short_name)                    -- idempotência da ingestão
 );
 
 -- Dispositivo (artigo/§/inciso) — granularidade fina, inspirada em Akoma Ntoso.
@@ -129,7 +130,9 @@ CREATE TABLE legal.norm_version (
   source_id       uuid REFERENCES legal.source(id),
   verification    legal.verification_status NOT NULL DEFAULT 'pendente',
   embedding       vector(1536),
-  created_at      timestamptz NOT NULL DEFAULT now()
+  content_hash    text GENERATED ALWAYS AS (md5(full_text)) STORED, -- dedup de redação
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (provision_id, content_hash)   -- idempotência: mesma redação não duplica
 );
 COMMENT ON TABLE legal.norm_version IS
   'Redação literal só deve ser tratada como autêntica quando verification = verificada.';
@@ -176,7 +179,8 @@ CREATE TABLE legal.document_chunk (
   content         text NOT NULL,
   token_count     integer,
   embedding       vector(1536),
-  created_at      timestamptz NOT NULL DEFAULT now()
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (ref_table, ref_id, chunk_index) -- idempotência da ingestão de chunks
 );
 
 -- =============================================================================
@@ -367,6 +371,10 @@ CREATE INDEX idx_prediction_matter   ON legal.prediction     (matter_id);
 
 -- Vigência: dispositivos em vigor hoje.
 CREATE INDEX idx_normver_valid       ON legal.norm_version   (provision_id, valid_from, valid_to);
+
+-- Idempotência da ingestão (chaves de conflito parciais).
+CREATE UNIQUE INDEX uq_source_url    ON legal.source    (source_type, url)        WHERE url IS NOT NULL;
+CREATE UNIQUE INDEX uq_precedent_case ON legal.precedent (court, case_number)      WHERE case_number IS NOT NULL;
 
 -- =============================================================================
 -- VIEW DE APOIO — redação vigente de cada dispositivo (texto literal atual)
